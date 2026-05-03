@@ -1,19 +1,22 @@
-# Render Blueprint: Docker web service for the mission-performance API.
-# After pushing to GitHub: Render Dashboard → Blueprints → New → connect this repo,
-# then apply this file (or paste from repo). Free tier may spin down when idle.
+# Render Blueprint — native Python (recommended for Free tier).
+# Docker image builds often hit OOM on small builders; Render's pip step is usually lighter.
+# `Combat Mission Model/Dockerfile` stays in the repo for local / other container hosts.
 #
 # Docs: https://docs.render.com/docs/blueprint-spec
 
 services:
   - type: web
     name: combat-mission-api
-    runtime: docker
+    runtime: python
     branch: main
     plan: free
     region: oregon
-    dockerfilePath: Combat Mission Model/Dockerfile
-    dockerContext: Combat Mission Model
+    rootDir: Combat Mission Model
+    buildCommand: pip install --upgrade pip setuptools wheel && pip install --no-cache-dir -r requirements-docker.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.11"
       - key: CORS_ORIGINS
         value: "*"

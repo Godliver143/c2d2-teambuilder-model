@@ -1,4 +1,5 @@
-# Used only by Dockerfile. Plain `uvicorn` avoids `uvicorn[standard]` extras (uvloop,
+# Production / locked deps for Docker and Render (`render.yaml` buildCommand).
+# Plain `uvicorn` avoids `uvicorn[standard]` extras (uvloop,
 # httptools, watchfiles) that may compile C code or spike memory on small cloud builders.
 # Pin the heavy stack for reliable manylinux wheels.
 fastapi>=0.111.0,<0.116

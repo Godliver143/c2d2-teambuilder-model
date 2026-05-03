@@ -78,27 +78,43 @@ The image listens on the `PORT` environment variable (defaults to `8000`) so it 
 
 Render puts the API on **`https://<something>.onrender.com`**. Anyone with the link can hit it (**no auth** in this app).
 
-**Before you start:** Push this repo’s **`main`** branch to GitHub (Render clones from GitHub). Your local branch should include **`render.yaml`** (repo root) and **`Combat Mission Model/Dockerfile`**.
+**Before you start:** Push this repo’s **`main`** branch to GitHub. You need **`render.yaml`** at the repo root, **`Combat Mission Model/requirements-docker.txt`**, **`athena.joblib`**, and **`Combat Mission Model/Dockerfile`** (Dockerfile is optional for Render but kept for container deploys elsewhere).
 
 ---
 
-**Option A — Blueprint (easiest if the file is on GitHub)**
+**Option A — Blueprint (recommended)**
 
 1. Sign up / log in at [render.com](https://render.com) and **connect GitHub**.
-2. **New +** → **Blueprint** → select repo **`Godliver143/c2d2-teambuilder-model`** (or yours).
-3. Render reads **`render.yaml`**: Docker build context **`Combat Mission Model`**, Dockerfile path as in that file.
-4. **Apply** and wait for the first **build + deploy** (usually a few minutes: `pip` install; the image **copies** the committed **`athena.joblib`** + metadata — it does **not** retrain during `docker build`, which avoids OOM on small free builders).
-5. Open the dashboard **URL** Render shows, e.g. `https://combat-mission-api.onrender.com` (exact slug may differ).
+2. **New +** → **Blueprint** → select **`Godliver143/c2d2-teambuilder-model`** (or your fork).
+3. **`render.yaml`** provisions a **`runtime: python`** service with **`rootDir: Combat Mission Model`**, **`PYTHON_VERSION=3.11.11`**, **`buildCommand`** `pip install … -r requirements-docker.txt`, and **`startCommand`** **`uvicorn main:app --host 0.0.0.0 --port $PORT`**. This avoids Docker-builder OOM on the **free** tier while using the same dependency pins as the Dockerfile.
+4. **Apply** / sync the blueprint and wait for **build + deploy** (mostly `pip`; usually a few minutes).
+5. Open the **`onrender.com`** URL from the dashboard.
 
-**Option B — Web Service (manual Docker)**
+**If you already had a Docker-based service from an older blueprint:** Render may keep the old runtime. Easiest fix: **create a new Web Service** from the updated blueprint, or manually set **Language = Python 3**, **Root = `Combat Mission Model`**, and paste the **`buildCommand`** / **`startCommand`** from **`render.yaml`**.
 
-1. **New +** → **Web Service** → choose the repo and **`main`**.
-2. **Runtime:** **Docker**.
+---
+
+**Option B — Web Service without Blueprint (manual, native Python)**
+
+1. **New +** → **Web Service** → repo + branch **`main`**.
+2. **Language:** **Python 3**.
 3. **Root directory:** **`Combat Mission Model`**
-4. **Dockerfile path:** **`Dockerfile`**
-5. **Instance type:** **Free** if you want; **Health check path:** **`/health`**
-6. **Environment:** add **`CORS_ORIGINS`** = **`*`** (same as blueprint).
-7. **Create Web Service** and wait for deploy.
+4. **Build command:**  
+   `pip install --upgrade pip setuptools wheel && pip install --no-cache-dir -r requirements-docker.txt`
+5. **Start command:**  
+   `uvicorn main:app --host 0.0.0.0 --port $PORT`
+6. **Environment:** **`PYTHON_VERSION`** = **`3.11.11`**, **`CORS_ORIGINS`** = **`*`**.
+7. **Health check path:** **`/health`**
+
+---
+
+**Option C — Docker (manual only)**
+
+Useful for self-hosted Docker or hosts that prefer a container image; on Render Free, image builds sometimes fail (`Killed` / OOM).
+
+1. **New +** → **Web Service** → repo **`main`**.
+2. **Runtime:** **Docker**; **root directory:** **`Combat Mission Model`**; **Dockerfile:** **`Dockerfile`**
+3. Add **`CORS_ORIGINS`** = **`*`**; **health check** **`/health`**
 
 ---
 
@@ -124,11 +140,11 @@ Free tier **sleeps after idle**: first request after sleep can take **30–60+ s
 
 **If the build fails on Render**
 
-- Open **Logs** → **Build** and scroll to the **first `ERROR` / `Killed` / `exit code: 1`** line. Common cases:
-  - **`Killed` during `pip install`** — builder ran out of RAM. The Docker image uses **`requirements-docker.txt`** (plain **`uvicorn`**, no **`uvicorn[standard]`**) and pinned wheels to reduce that risk; if it still dies, try a paid builder or a smaller dependency set.
-  - **Missing `COPY` file** — ensure **`athena.joblib`**, **`models/`**, and **`requirements-docker.txt`** are committed and on **`main`**.
-  - **Compile errors** for **`uvloop` / `httptools`** — you should not see these in the current Dockerfile; if you do, the service may be using an old Dockerfile—reconnect the repo or clear build cache and redeploy.
-- To refresh the model: run **`python train.py`** locally in **`Combat Mission Model/`**, commit the updated **`athena.joblib`** + **`models/mission_model_metadata.json`**, push, and redeploy.
+- Open **Logs** → **Build** (or **Deploy** if the build succeeded but the app exited). Note the **first** `ERROR` / `ModuleNotFoundError` / `Killed` line.
+  - **`Killed` during `pip install`** — try the **native Python** blueprint in **`render.yaml`** (not Docker); ensure **`PYTHON_VERSION`** is **`3.11.11`**. Avoid **`uvicorn[standard]`** on cloud builds (pinned **`requirements-docker.txt`** uses plain **`uvicorn`**).
+  - **Wrong Python version** — new Render stacks default to a very new Python; this repo pins **3.11.11** in **`render.yaml`** and **`.python-version`** under **`Combat Mission Model/`**.
+  - **Docker-only failures** (`COPY`, image build): use Option A/B (native Python) above, or a paid **Docker** pipeline with more memory.
+- To refresh the model: **`python train.py`** locally → commit **`athena.joblib`** + **`models/mission_model_metadata.json`** → push → redeploy.
 
 ---
 

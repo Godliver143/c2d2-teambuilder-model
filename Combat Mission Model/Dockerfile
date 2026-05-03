@@ -11,6 +11,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
+# Same pinned list as Render native build (`render.yaml` → requirements-docker.txt).
 COPY requirements-docker.txt .
 RUN python -m pip install --upgrade pip setuptools wheel \
     && pip install -r requirements-docker.txt
