@@ -74,25 +74,58 @@ Confirms lifespan load, `/health`, `/team/select`, rankings, soldier profiles, m
 
 The image listens on the `PORT` environment variable (defaults to `8000`) so it works on Render, Railway, Fly.io, Cloud Run, etc.
 
-### Deploy for your team (recommended: Render)
+### Deploy for your team (Render → public HTTPS URL)
 
-1. Push this repository to GitHub (if it is not already).
-2. In [Render](https://render.com), create a **Blueprint** (or **Web Service** → **Docker**) and point it at the repo.
-3. If you use the included root `render.yaml`, Render will build from `Combat Mission Model/Dockerfile` with the correct context.
-4. After deploy, share the public URL Render assigns (for example `https://combat-mission-api.onrender.com`). Open `/docs` on that host for Swagger UI.
-5. From the **repository root**, verify the deployed service responds and allows cross-origin browsers (CORS preflight):
+Render puts the API on **`https://<something>.onrender.com`**. Anyone with the link can hit it (**no auth** in this app).
+
+**Before you start:** Push this repo’s **`main`** branch to GitHub (Render clones from GitHub). Your local branch should include **`render.yaml`** (repo root) and **`Combat Mission Model/Dockerfile`**.
+
+---
+
+**Option A — Blueprint (easiest if the file is on GitHub)**
+
+1. Sign up / log in at [render.com](https://render.com) and **connect GitHub**.
+2. **New +** → **Blueprint** → select repo **`Godliver143/c2d2-teambuilder-model`** (or yours).
+3. Render reads **`render.yaml`**: Docker build context **`Combat Mission Model`**, Dockerfile path as in that file.
+4. **Apply** and wait for the first **build + deploy** (first time can take **10–15+ minutes**: `pip`, then **`RUN python train.py`** in the image).
+5. Open the dashboard **URL** Render shows, e.g. `https://combat-mission-api.onrender.com` (exact slug may differ).
+
+**Option B — Web Service (manual Docker)**
+
+1. **New +** → **Web Service** → choose the repo and **`main`**.
+2. **Runtime:** **Docker**.
+3. **Root directory:** **`Combat Mission Model`**
+4. **Dockerfile path:** **`Dockerfile`**
+5. **Instance type:** **Free** if you want; **Health check path:** **`/health`**
+6. **Environment:** add **`CORS_ORIGINS`** = **`*`** (same as blueprint).
+7. **Create Web Service** and wait for deploy.
+
+---
+
+**After deploy — quick checks**
+
+- Browser: **`https://YOUR_SERVICE.onrender.com/docs`** (Swagger)
+- **`https://YOUR_SERVICE.onrender.com/ui`** (team UI — use **https** on Render)
+- Postman base URL (example): **`https://YOUR_SERVICE.onrender.com`**  
+  - `GET /health`  
+  - `POST /team/select` with JSON body **as documented above** (no query params).
+
+From repo root locally (after replacing the hostname):
 
 ```bash
-python3 scripts/verify_live_api.py --base-url https://YOUR-SERVICE.onrender.com
+python3 scripts/verify_live_api.py --base-url https://YOUR_SERVICE.onrender.com
 ```
 
-If Render returns "no server" (`x-render-routing: no-server`), the web service is not created or not linked to this repo yet—finish the Blueprint / Web Service in the Render dashboard first.
+Free tier **sleeps after idle**: first request after sleep can take **30–60+ seconds**.
 
-**Teammates** can call the API at `GET /health`, `POST /team/select`, etc. **CORS** is configurable with `CORS_ORIGINS` (default `*` in the blueprint so browsers can call from another origin).
+**Security:** Treat the Render URL as **public**. Restrict later with SSO/VPN/API keys or a private service if needed.
 
-**Security:** This reference API does not implement authentication. Treat the public URL as **open**. For restricted access, front it with SSO/VPN/API keys or deploy to a private network.
+---
 
-Free tiers may **cold-start** after idle periods (first request can be slow).
+**If the build fails on Render**
+
+- Read **Logs** → **Build**: look for **`train.py`** or **`pip`** errors out of memory; free RAM is tight during training.
+- Fix code/data, push again → Render redeploys.
 
 ---
 
