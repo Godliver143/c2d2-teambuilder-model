@@ -87,7 +87,7 @@ Render puts the API on **`https://<something>.onrender.com`**. Anyone with the l
 1. Sign up / log in at [render.com](https://render.com) and **connect GitHub**.
 2. **New +** → **Blueprint** → select repo **`Godliver143/c2d2-teambuilder-model`** (or yours).
 3. Render reads **`render.yaml`**: Docker build context **`Combat Mission Model`**, Dockerfile path as in that file.
-4. **Apply** and wait for the first **build + deploy** (first time can take **10–15+ minutes**: `pip`, then **`RUN python train.py`** in the image).
+4. **Apply** and wait for the first **build + deploy** (usually a few minutes: `pip` install; the image **copies** the committed **`athena.joblib`** + metadata — it does **not** retrain during `docker build`, which avoids OOM on small free builders).
 5. Open the dashboard **URL** Render shows, e.g. `https://combat-mission-api.onrender.com` (exact slug may differ).
 
 **Option B — Web Service (manual Docker)**
@@ -124,8 +124,8 @@ Free tier **sleeps after idle**: first request after sleep can take **30–60+ s
 
 **If the build fails on Render**
 
-- Read **Logs** → **Build**: look for **`train.py`** or **`pip`** errors out of memory; free RAM is tight during training.
-- Fix code/data, push again → Render redeploys.
+- Read **Logs** → **Build**: most issues are **`pip install`** (network, resolver) or **missing files** in the repo (e.g. **`athena.joblib`** or **`models/mission_model_metadata.json`** not committed).
+- To refresh the model: run **`python train.py`** locally in **`Combat Mission Model/`**, commit the updated **`athena.joblib`** + **`models/mission_model_metadata.json`**, push, and redeploy.
 
 ---
 

@@ -8,16 +8,19 @@ RUN grep -v '^ipykernel' requirements.txt > /tmp/requirements.api.txt \
     && pip install --no-cache-dir -r /tmp/requirements.api.txt \
     && rm /tmp/requirements.api.txt
 
-COPY model.py schemas.py main.py train.py mission_context.py ./
+# train.py intentionally omitted from the image — build skips retraining so small hosts (e.g.
+# Render Free) avoid OOM during sklearn CV + GradientBoosting. Commit `athena.joblib` +
+# `models/mission_model_metadata.json` and rebuild the image after local `python train.py`.
+COPY model.py schemas.py main.py mission_context.py ./
 COPY web ./web/
 COPY evaluations_full.csv detailed_full.csv ./
+COPY athena.joblib ./
+COPY models ./models/
 
 ENV EVAL_PATH=/app/evaluations_full.csv
 ENV DETAIL_PATH=/app/detailed_full.csv
 ENV MODEL_PATH=/app/athena.joblib
 ENV MODEL_METADATA_PATH=/app/models/mission_model_metadata.json
-
-RUN python train.py
 
 RUN useradd --create-home --shell /bin/bash appuser \
     && chown -R appuser:appuser /app
