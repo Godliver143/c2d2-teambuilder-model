@@ -108,6 +108,37 @@ Render puts the API on **`https://<something>.onrender.com`**. Anyone with the l
 
 ---
 
+### Deploy with Streamlit Community Cloud (if Render keeps failing)
+
+The **Streamlit** app talks to the same **`Athena`** pickle as **`main.py`**, without FastAPI or container builds.
+
+Repo layout (already in Git):
+
+| Path | Purpose |
+|------|---------|
+| **`streamlit_app.py`** (repo root) | Entrypoint — adds **`Combat Mission Model/`** on `sys.path` and loads **`athena.joblib`**. |
+| **`requirements-streamlit.txt`** | `streamlit` + pinned **`numpy` / `scikit-learn`** stack (aligned with **`requirements-docker.txt`**). |
+| **`packages.txt`** | Requests **`libgomp1`** (OpenMP) for sklearn wheels on Linux builders. |
+
+**Steps**
+
+1. Push **`main`** to GitHub ([streamlit cloud](https://streamlit.io/cloud) connects like Render).
+2. **Create app** → pick repo & branch **`main`**.
+3. Main file **`streamlit_app.py`** (leave path at repo root).
+4. **Advanced settings** → Python version **3.11** → Requirements file **`requirements-streamlit.txt`**.
+5. Deploy; share the **`*.streamlit.app`** URL (public tier is free with account limits).
+
+**Local run** (repo root):
+
+```bash
+python3 -m pip install -r requirements-streamlit.txt
+streamlit run streamlit_app.py
+```
+
+REST clients (Postman) still target the FastAPI service if you deploy it elsewhere; Streamlit covers **human-in-the-browser** team building only.
+
+---
+
 **Option C — Docker (manual only)**
 
 Useful for self-hosted Docker or hosts that prefer a container image; on Render Free, image builds sometimes fail (`Killed` / OOM).
