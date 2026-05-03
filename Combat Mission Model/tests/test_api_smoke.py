@@ -46,6 +46,11 @@ class TestSmokeAPI(unittest.TestCase):
         self.assertIn("text/html", r.headers.get("content-type", ""))
         self.assertIn("Team selection", r.text)
 
+    def test_ui_redirect_from_no_slash(self):
+        r = self.client.get("/ui", follow_redirects=False)
+        self.assertEqual(r.status_code, 307)
+        self.assertIn("/ui/", (r.headers.get("location") or ""))
+
     def test_health_ok(self):
         r = self.client.get("/health")
         self.assertEqual(r.status_code, 200)

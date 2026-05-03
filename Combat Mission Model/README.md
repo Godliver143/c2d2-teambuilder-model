@@ -35,7 +35,9 @@ uvicorn main:app --reload --port 8000
 
 Open http://localhost:8000/docs
 
-Team selection appears in the browser at **http://localhost:8000/ui/** — same backend as Swagger; submit the form to see ranked roster options without using `/docs`.
+Team selection appears in the browser at **http://localhost:8000/ui/** (or **http://127.0.0.1:8000/ui/**). Use **`http://`**, **not `https://`**: uvicorn locally serves plain HTTP only; **`https://` often triggers Chrome’s “invalid response”**.
+
+Same backend as Swagger — submit the form to see roster options without using `/docs`.
 
 ### Docker (train baked in + serves reference API)
 

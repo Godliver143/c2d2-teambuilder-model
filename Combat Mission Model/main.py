@@ -25,8 +25,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from starlette.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 
 from mission_context import (
     ALLOWED_DIFFICULTY,
@@ -389,9 +388,25 @@ def get_soldier(leader_identifier: str):
 
 
 _WEB_DIR = Path(__file__).resolve().parent / "web"
-if _WEB_DIR.is_dir():
-    app.mount(
-        "/ui",
-        StaticFiles(directory=str(_WEB_DIR), html=True),
-        name="team_selection_ui",
+_UI_INDEX = _WEB_DIR / "index.html"
+
+
+@app.get("/ui", include_in_schema=False)
+def ui_strip_redirect():
+    """Redirect /ui → /ui/ so browser relative URLs behave consistently."""
+    return RedirectResponse(url="/ui/", status_code=307)
+
+
+@app.get("/ui/", include_in_schema=False)
+def team_selection_ui_page():
+    """Serve the team-selection viewer (same origin as API; use http:// not https:// locally)."""
+    if not _UI_INDEX.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Web UI missing: expected web/index.html next to main.py.",
+        )
+    return FileResponse(
+        path=_UI_INDEX,
+        media_type="text/html; charset=utf-8",
+        headers={"Cache-Control": "no-cache"},
     )
