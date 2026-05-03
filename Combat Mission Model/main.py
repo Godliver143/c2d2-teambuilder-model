@@ -204,6 +204,12 @@ async def lifespan(app: FastAPI):
         print("Loading pre-trained model...")
         athena = Athena.load(artifact)
     else:
+        if os.getenv("RENDER", "").strip().lower() == "true":
+            raise RuntimeError(
+                f"MODEL_PATH artifact missing at {artifact!r}; commit `athena.joblib` "
+                "in the app directory or set MODEL_PATH. On Render we skip train-from-scratch "
+                "to avoid OOM/timeouts on small instances."
+            )
         print("Training model from scratch...")
         athena = Athena()
         metrics = athena.train()

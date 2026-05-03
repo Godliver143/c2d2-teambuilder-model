@@ -86,11 +86,11 @@ Render puts the API on **`https://<something>.onrender.com`**. Anyone with the l
 
 1. Sign up / log in at [render.com](https://render.com) and **connect GitHub**.
 2. **New +** → **Blueprint** → select **`Godliver143/c2d2-teambuilder-model`** (or your fork).
-3. **`render.yaml`** provisions a **`runtime: python`** service with **`rootDir: Combat Mission Model`**, **`PYTHON_VERSION=3.11.11`**, **`buildCommand`** `pip install … -r requirements-docker.txt`, and **`startCommand`** **`uvicorn main:app --host 0.0.0.0 --port $PORT`**. This avoids Docker-builder OOM on the **free** tier while using the same dependency pins as the Dockerfile.
+3. **`render.yaml`** provisions **`runtime: python`** with **no blueprint `rootDir`** (avoid path bugs with **`Combat Mission Model`** spaces — see [Render monorepo `rootDir`](https://render.com/docs/monorepo-support)). Build/start **`cd "Combat Mission Model"`** then **`python -m pip … -r requirements-docker.txt`** / **`python -m uvicorn …`**. **`PYTHON_VERSION=3.11.11`** and **`.python-version`** at the **repo root** keep wheels aligned with **`requirements-docker.txt`**.
 4. **Apply** / sync the blueprint and wait for **build + deploy** (mostly `pip`; usually a few minutes).
 5. Open the **`onrender.com`** URL from the dashboard.
 
-**If you already had a Docker-based service from an older blueprint:** Render may keep the old runtime. Easiest fix: **create a new Web Service** from the updated blueprint, or manually set **Language = Python 3**, **Root = `Combat Mission Model`**, and paste the **`buildCommand`** / **`startCommand`** from **`render.yaml`**.
+**If you already had a Docker-based service from an older blueprint:** Render may keep the old runtime. Easiest fix: **create a new Web Service** from the updated blueprint, or manually match **`render.yaml`**: Language **Python 3**, **leave Root Directory empty** (repo root), and paste **`buildCommand`** / **`startCommand`** from that file verbatim.
 
 ---
 
@@ -98,11 +98,11 @@ Render puts the API on **`https://<something>.onrender.com`**. Anyone with the l
 
 1. **New +** → **Web Service** → repo + branch **`main`**.
 2. **Language:** **Python 3**.
-3. **Root directory:** **`Combat Mission Model`**
-4. **Build command:**  
-   `pip install --upgrade pip setuptools wheel && pip install --no-cache-dir -r requirements-docker.txt`
+3. **Root directory:** leave **empty** (repository root — same as **`render.yaml`**).
+4. **Build command:** (copy from **`render.yaml`**)  
+   `cd "Combat Mission Model" && python -m pip install --upgrade pip setuptools wheel && python -m pip install --no-cache-dir -r requirements-docker.txt`
 5. **Start command:**  
-   `uvicorn main:app --host 0.0.0.0 --port $PORT`
+   `cd "Combat Mission Model" && python -m uvicorn main:app --host 0.0.0.0 --port $PORT`
 6. **Environment:** **`PYTHON_VERSION`** = **`3.11.11`**, **`CORS_ORIGINS`** = **`*`**.
 7. **Health check path:** **`/health`**
 
