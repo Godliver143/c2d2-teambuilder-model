@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Team selection — Combat mission model</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #111b2e;
+      --card: #182236;
+      --border: #2a3a55;
+      --text: #e8eef8;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-dim: rgba(56, 189, 248, 0.15);
+      --ok: #4ade80;
+      --err: #f87171;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, #1e3a5f 0%, var(--bg) 55%);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100vh;
+      padding: 1.75rem clamp(1rem, 4vw, 3rem) 4rem;
+    }
+    header { max-width: 960px; margin: 0 auto 2rem; }
+    header h1 { font-size: 1.35rem; font-weight: 600; margin: 0 0 0.35rem; letter-spacing: -0.02em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+    nav a { color: var(--accent); text-decoration: none; margin-right: 1rem; font-size: 0.875rem; }
+    nav a:hover { text-decoration: underline; }
+
+    .layout {
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      gap: 1.5rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.35rem;
+    }
+    .card h2 { margin: 0 0 1rem; font-size: 1rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+    .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+    select, input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 0.55rem 0.65rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+    select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    button[type="submit"] {
+      background: linear-gradient(180deg, #0ea5e9, #0284c7);
+      color: #fff;
+      border: none;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    details { margin-top: 0.75rem; color: var(--muted); font-size: 0.9rem; }
+    details summary { cursor: pointer; color: var(--accent); margin-bottom: 0.5rem; }
+
+    .status { font-size: 0.875rem; margin-top: 0.75rem; min-height: 1.25rem; }
+    .status.error { color: var(--err); }
+    .status.ok { color: var(--ok); }
+
+    #results { display: none; }
+    #results.visible { display: block; }
+
+    .option-block {
+      margin-bottom: 1.75rem;
+      padding: 1rem;
+      background: var(--panel);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .option-block h3 {
+      margin: 0 0 0.75rem;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    tr:last-child td { border-bottom: none; }
+
+    .breakdown-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.5rem 1rem;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .breakdown-grid span { color: var(--text); font-weight: 500; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Team selection viewer</h1>
+    <p>Choose a mission and run the model; results come from the same API as Swagger (<code>POST /team/select</code>).</p>
+    <nav>
+      <a href="/docs">OpenAPI / Swagger</a>
+      <a href="/health">Health</a>
+      <a href="/">Service JSON</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <form class="card" id="form">
+      <h2>Request</h2>
+      <div class="row">
+        <div>
+          <label for="mission_type">Mission type</label>
+          <select id="mission_type" name="mission_type" required></select>
+        </div>
+        <div>
+          <label for="top_k">Candidate pool (top_k)</label>
+          <input type="number" id="top_k" name="top_k" min="6" max="200" value="20" required />
+        </div>
+        <div>
+          <label for="num_team_options">Team options to return</label>
+          <input type="number" id="num_team_options" name="num_team_options" min="1" max="25" value="2" required />
+        </div>
+      </div>
+
+      <details id="ctx-wrap">
+        <summary>Optional mission context (affects scores)</summary>
+        <div class="row" style="margin-top:0.75rem">
+          <div>
+            <label for="sleep_hours">Sleep hours</label>
+            <input type="number" id="sleep_hours" min="0" max="24" step="0.5" value="7" />
+          </div>
+          <div>
+            <label for="temperature_f">Temp (°F)</label>
+            <input type="number" id="temperature_f" step="0.1" placeholder="optional" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="wind">Wind</label>
+            <select id="wind"><option value="">—</option></select>
+          </div>
+          <div>
+            <label for="terrain">Terrain</label>
+            <select id="terrain"><option value="">—</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="difficulty">Difficulty</label>
+            <select id="difficulty"><option value="">—</option></select>
+          </div>
+          <div>
+            <label for="enemy_forces">Enemy forces</label>
+            <select id="enemy_forces"><option value="">—</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div style="grid-column: 1 / -1">
+            <label for="notes">Notes (echo only)</label>
+            <input type="text" id="notes" placeholder="optional" />
+          </div>
+        </div>
+      </details>
+
+      <button type="submit" id="submit">Run team selection</button>
+      <div class="status" id="status" aria-live="polite"></div>
+    </form>
+
+    <section class="card" id="results">
+      <h2>Results</h2>
+      <p id="summary" style="margin:0 0 1rem;color:var(--muted);font-size:0.9rem"></p>
+      <div id="options-container"></div>
+    </section>
+  </div>
+
+  <script>
+    const BASE = ""; // same origin as this page
+
+    async function populateMissions() {
+      const sel = document.getElementById("mission_type");
+      sel.innerHTML = "";
+      const r = await fetch(BASE + "/mission-types");
+      if (!r.ok) throw new Error("Could not load /mission-types");
+      const data = await r.json();
+      for (const m of data.available_mission_types) {
+        const o = document.createElement("option");
+        o.value = m;
+        o.textContent = m.replace(/_/g, " ");
+        sel.appendChild(o);
+      }
+    }
+
+    async function populateEnums() {
+      const r = await fetch(BASE + "/mission-context/enums");
+      if (!r.ok) return;
+      const data = await r.json();
+      function fill(selId, list) {
+        const s = document.getElementById(selId);
+        for (const v of list) {
+          const o = document.createElement("option");
+          o.value = v;
+          o.textContent = v;
+          s.appendChild(o);
+        }
+      }
+      fill("wind", data.wind || []);
+      fill("terrain", data.terrain || []);
+      fill("difficulty", data.difficulty || []);
+      fill("enemy_forces", data.enemy_forces || []);
+    }
+
+    function ctxPayload() {
+      const sleep = parseFloat(document.getElementById("sleep_hours").value);
+      const temp = document.getElementById("temperature_f").value;
+      const payload = {};
+      if (!Number.isNaN(sleep)) payload.sleep_hours = sleep;
+      if (temp !== "") payload.temperature_f = parseFloat(temp);
+      const w = document.getElementById("wind").value;
+      const t = document.getElementById("terrain").value;
+      const d = document.getElementById("difficulty").value;
+      const e = document.getElementById("enemy_forces").value;
+      const n = document.getElementById("notes").value.trim();
+      if (w) payload.wind = w;
+      if (t) payload.terrain = t;
+      if (d) payload.difficulty = d;
+      if (e) payload.enemy_forces = e;
+      if (n) payload.notes = n;
+      return Object.keys(payload).length ? payload : null;
+    }
+
+    function renderBreakdown(b) {
+      if (!b) return "";
+      const rows = [
+        ["Avg score", b.avg_predicted_score?.toFixed?.(4)],
+        ["Min / max", `${b.min_predicted_score?.toFixed?.(4)} / ${b.max_predicted_score?.toFixed?.(4)}`],
+        ["Units", (b.units_represented || []).join(", ")],
+        ["Avg planning / tactics", `${b.avg_planning?.toFixed?.(3)} / ${b.avg_tactics?.toFixed?.(3)}`],
+      ];
+      const div = document.createElement("div");
+      div.className = "breakdown-grid";
+      for (const [k, v] of rows) {
+        div.innerHTML += `<div>${k}<br/><span>${v ?? "—"}</span></div>`;
+      }
+      return div.outerHTML;
+    }
+
+    function renderTeamTable(team) {
+      const rows = team.map((s) =>
+        `<tr>
+          <td>${escapeHtml(s.leader_rank)} ${escapeHtml(s.leader_name)}</td>
+          <td>${escapeHtml(s.leader_unit)}</td>
+          <td>${typeof s.predicted_score === "number" ? s.predicted_score.toFixed(4) : "—"}</td>
+          <td>${escapeHtml(s.strength_role_label || s.strength_role_key || "—")}</td>
+        </tr>`
+      );
+      return `<table>
+        <thead><tr><th>Soldier</th><th>Unit</th><th>Predicted</th><th>Strength slot</th></tr></thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>`;
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return "";
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    document.getElementById("form").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const status = document.getElementById("status");
+      const btn = document.getElementById("submit");
+      const results = document.getElementById("results");
+      const container = document.getElementById("options-container");
+      status.textContent = "";
+      status.className = "status";
+      btn.disabled = true;
+      results.classList.remove("visible");
+      container.innerHTML = "";
+
+      const body = {
+        mission_type: document.getElementById("mission_type").value,
+        top_k: parseInt(document.getElementById("top_k").value, 10),
+        num_team_options: parseInt(document.getElementById("num_team_options").value, 10),
+      };
+      const ctx = ctxPayload();
+      if (ctx) body.mission_context = ctx;
+
+      try {
+        const r = await fetch(BASE + "/team/select", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          const msg = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail || data);
+          throw new Error(msg || "Request failed");
+        }
+
+        status.textContent = `OK · ${data.num_team_options_returned ?? "?"} roster(s) returned`;
+        status.classList.add("ok");
+
+        document.getElementById("summary").innerHTML =
+          `Mission <strong>${escapeHtml(data.mission_type)}</strong> · best option score <strong>${Number(data.team_score).toFixed(4)}</strong>` +
+          (data.mission_context ? ` · context applied` : "");
+
+        const opts = data.team_options || [];
+        for (const opt of opts) {
+          const el = document.createElement("div");
+          el.className = "option-block";
+          el.innerHTML = `
+            <h3>
+              Option ${typeof opt.option_id === "number" ? opt.option_id : "?"}
+              <span class="badge">team score ${typeof opt.team_score === "number" ? opt.team_score.toFixed(4) : "?"}</span>
+            </h3>
+            ${renderTeamTable(opt.team || [])}
+            ${renderBreakdown(opt.breakdown)}
+          `;
+          container.appendChild(el);
+        }
+
+        results.classList.add("visible");
+      } catch (e) {
+        status.textContent = e.message || String(e);
+        status.classList.add("error");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    populateMissions().catch((e) => {
+      document.getElementById("status").textContent = "Setup failed: " + e.message;
+      document.getElementById("status").classList.add("error");
+    });
+    populateEnums().catch(() => {});
+  </script>
+</body>
+</html>

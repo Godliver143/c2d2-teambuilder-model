@@ -9,6 +9,7 @@ RUN grep -v '^ipykernel' requirements.txt > /tmp/requirements.api.txt \
     && rm /tmp/requirements.api.txt
 
 COPY model.py schemas.py main.py train.py mission_context.py ./
+COPY web ./web/
 COPY evaluations_full.csv detailed_full.csv ./
 
 ENV EVAL_PATH=/app/evaluations_full.csv

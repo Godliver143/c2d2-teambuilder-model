@@ -38,6 +38,13 @@ class TestSmokeAPI(unittest.TestCase):
         r = self.client.get("/")
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json().get("service"), "combat-mission-model")
+        self.assertIn("/ui/", str(r.json().get("team_selection_ui", "")))
+
+    def test_web_ui_page(self):
+        r = self.client.get("/ui/")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("text/html", r.headers.get("content-type", ""))
+        self.assertIn("Team selection", r.text)
 
     def test_health_ok(self):
         r = self.client.get("/health")

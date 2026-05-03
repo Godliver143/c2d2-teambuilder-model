@@ -26,6 +26,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.staticfiles import StaticFiles
 
 from mission_context import (
     ALLOWED_DIFFICULTY,
@@ -207,6 +208,7 @@ def root():
         "docs": "/docs",
         "openapi": "/openapi.json",
         "metadata": "/model/metadata",
+        "team_selection_ui": "/ui/",
         "integration_note": (
             "Mission scoring and team construction; pair with Athena for narrative / coaching."
         ),
@@ -384,3 +386,12 @@ def get_soldier(leader_identifier: str):
             detail=f"Soldier '{leader_identifier}' not found."
         )
     return profile
+
+
+_WEB_DIR = Path(__file__).resolve().parent / "web"
+if _WEB_DIR.is_dir():
+    app.mount(
+        "/ui",
+        StaticFiles(directory=str(_WEB_DIR), html=True),
+        name="team_selection_ui",
+    )
