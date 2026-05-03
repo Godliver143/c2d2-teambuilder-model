@@ -60,6 +60,13 @@ The image listens on the `PORT` environment variable (defaults to `8000`) so it 
 2. In [Render](https://render.com), create a **Blueprint** (or **Web Service** → **Docker**) and point it at the repo.
 3. If you use the included root `render.yaml`, Render will build from `Combat Mission Model/Dockerfile` with the correct context.
 4. After deploy, share the public URL Render assigns (for example `https://combat-mission-api.onrender.com`). Open `/docs` on that host for Swagger UI.
+5. From the **repository root**, verify the deployed service responds and allows cross-origin browsers (CORS preflight):
+
+```bash
+python3 scripts/verify_live_api.py --base-url https://YOUR-SERVICE.onrender.com
+```
+
+If Render returns "no server" (`x-render-routing: no-server`), the web service is not created or not linked to this repo yet—finish the Blueprint / Web Service in the Render dashboard first.
 
 **Teammates** can call the API at `GET /health`, `POST /team/select`, etc. **CORS** is configurable with `CORS_ORIGINS` (default `*` in the blueprint so browsers can call from another origin).
 
