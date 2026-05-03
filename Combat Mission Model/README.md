@@ -84,6 +84,16 @@ Free tiers may **cold-start** after idle periods (first request can be slow).
 
 ---
 
+## Cross-origin browsers (CORS)
+
+The FastAPI stack uses **`CORSMiddleware`** so cross-site frontends receive correct **`Access-Control-Allow-*`** responses and **`OPTIONS` preflight** is answered (**`Allow-Methods`**, **`Allow-Headers`**, **`Max-Age`**, default **`86400` s**).
+
+- **`CORS_ORIGINS=*`** (default in **render.yaml**) — `Access-Control-Allow-Origin: *`. Simple for many teams calling from Postman plus any web app origin. Browsers cannot use **`fetch` with `credentials: "include"`** together with `*` — use bearer tokens without cookies, or list explicit origins instead.
+- **Explicit origins** — set **`CORS_ORIGINS=https://app.example.com`** (comma- or whitespace-separated list). Mirrors the calling origin in **`Access-Control-Allow-Origin`**. Optionally **`CORS_ALLOW_CREDENTIALS=true`** (default) for cookie / credentialed requests from those sites; set **`false`** if everything is bearer-token + no cookies.
+- **Disable browser CORS** — set **`CORS_ORIGINS=`** (empty).
+
+---
+
 ## Environment variables
 
 | Variable | Default (local) | Description |
@@ -93,7 +103,9 @@ Free tiers may **cold-start** after idle periods (first request can be slow).
 | `MODEL_PATH` | `./athena.joblib` | Serialized trained pipeline |
 | `MODEL_METADATA_PATH` | `./models/mission_model_metadata.json` | Training metadata JSON |
 | `PORT` | `8000` | HTTP port (hosts like Render/Railway set this automatically) |
-| `CORS_ORIGINS` | `*` | Comma-separated allowed browser origins; use `*` for any origin, or e.g. `https://yourapp.vercel.app` |
+| `CORS_ORIGINS` | `*` | Comma- or whitespace-separated browser origins (e.g. `https://yourapp.vercel.app`); `"*"` allows any origin |
+| `CORS_ALLOW_CREDENTIALS` | `true` | When origins are explicit lists, allow cookie / credentialed browser requests. Ignored when `CORS_ORIGINS=*`. |
+| `CORS_PREFLIGHT_MAX_AGE` | `86400` | How many seconds browsers may cache `OPTIONS` preflight responses. |
 
 ---
 

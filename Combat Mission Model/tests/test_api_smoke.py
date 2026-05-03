@@ -108,3 +108,18 @@ class TestSmokeAPI(unittest.TestCase):
         )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers.get("access-control-allow-origin"), "*")
+
+    def test_cors_preflight_options(self):
+        r = self.client.options(
+            "/team/select",
+            headers={
+                "Origin": "https://example-teammate.com",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+        self.assertIn(r.status_code, (200, 204))
+        self.assertEqual(r.headers.get("access-control-allow-origin"), "*")
+        max_age = r.headers.get("access-control-max-age")
+        self.assertIsNotNone(max_age, "preflight should set access-control-max-age")
+        self.assertGreater(int(max_age), 0)

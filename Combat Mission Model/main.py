@@ -19,6 +19,7 @@ Endpoints:
 
 import json
 import os
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -103,6 +104,66 @@ def _mission_context_from_input(
     )
 
 
+def _normalize_cors_origins(raw: str) -> list[str]:
+    """Split comma-/whitespace-separated values; dedupe; strip trailing slashes (no paths in origins)."""
+    seen: dict[str, None] = {}
+    out: list[str] = []
+    for chunk in re.split(r"[,\s]+", raw.strip()):
+        piece = chunk.strip().rstrip("/")
+        if not piece or piece in seen:
+            continue
+        seen[piece] = None
+        out.append(piece)
+    return out
+
+
+def _configure_cors(app: FastAPI) -> None:
+    """
+    Cross-origin handling for browsers and cross-site tools.
+
+    ``CORS_ORIGINS``:
+      - ``*`` — reflect ``Access-Control-Allow-Origin: *`` (cookies / credentialed
+        ``fetch`` from browsers must NOT use ``credentials: \"include\"`` with this setting).
+      - Comma-separated list (e.g. ``https://app.example.com``) — only those origins receive
+        CORS replies; optionally enable cookies/credentials via ``CORS_ALLOW_CREDENTIALS=true``.
+
+    Uses ``CORSMiddleware`` so ``OPTIONS`` preflight is answered with allow-methods / allow-headers / max_age.
+    """
+    raw = os.getenv("CORS_ORIGINS", "*").strip()
+    if not raw:
+        return
+    origins = _normalize_cors_origins(raw)
+    if "*" in origins and len(origins) > 1:
+        raise ValueError(
+            "CORS_ORIGINS: use '*' alone or explicit origins; do not combine '*' with other hosts."
+        )
+    if origins == ["*"]:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=False,
+            allow_methods=["*"],
+            allow_headers=["*"],
+            max_age=int(os.getenv("CORS_PREFLIGHT_MAX_AGE", "86400")),
+        )
+        return
+
+    if not origins:
+        return
+
+    cred_raw = os.getenv("CORS_ALLOW_CREDENTIALS", "true").strip().lower()
+    allow_creds = cred_raw in ("1", "true", "yes", "on")
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=allow_creds,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        max_age=int(os.getenv("CORS_PREFLIGHT_MAX_AGE", "86400")),
+    )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global athena
@@ -119,6 +180,7 @@ async def lifespan(app: FastAPI):
         print(f"Model trained. CV MAE: {metrics['cv_mae_mean']:.4f}")
     yield
 
+
 app = FastAPI(
     title="Combat mission model — inference API",
     description=(
@@ -131,27 +193,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Optional CORS for teammates / web frontends — set CORS_ORIGINS to comma-separated origins
-# or "*" to allow any origin (no credentials with "*").
-_cors = os.getenv("CORS_ORIGINS", "*").strip()
-if _cors:
-    _origins = [o.strip() for o in _cors.split(",") if o.strip()]
-    if _origins == ["*"]:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=False,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
-    else:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=_origins,
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
+_configure_cors(app)
 
 
 # ── Root / discovery ──────────────────────────────────────────
