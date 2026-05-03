@@ -124,7 +124,10 @@ Free tier **sleeps after idle**: first request after sleep can take **30–60+ s
 
 **If the build fails on Render**
 
-- Read **Logs** → **Build**: most issues are **`pip install`** (network, resolver) or **missing files** in the repo (e.g. **`athena.joblib`** or **`models/mission_model_metadata.json`** not committed).
+- Open **Logs** → **Build** and scroll to the **first `ERROR` / `Killed` / `exit code: 1`** line. Common cases:
+  - **`Killed` during `pip install`** — builder ran out of RAM. The Docker image uses **`requirements-docker.txt`** (plain **`uvicorn`**, no **`uvicorn[standard]`**) and pinned wheels to reduce that risk; if it still dies, try a paid builder or a smaller dependency set.
+  - **Missing `COPY` file** — ensure **`athena.joblib`**, **`models/`**, and **`requirements-docker.txt`** are committed and on **`main`**.
+  - **Compile errors** for **`uvloop` / `httptools`** — you should not see these in the current Dockerfile; if you do, the service may be using an old Dockerfile—reconnect the repo or clear build cache and redeploy.
 - To refresh the model: run **`python train.py`** locally in **`Combat Mission Model/`**, commit the updated **`athena.joblib`** + **`models/mission_model_metadata.json`**, push, and redeploy.
 
 ---

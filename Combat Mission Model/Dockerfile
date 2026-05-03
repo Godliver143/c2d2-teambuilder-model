@@ -1,12 +1,19 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
-# API + training stack (exclude ipykernel from dev requirements)
-COPY requirements.txt .
-RUN grep -v '^ipykernel' requirements.txt > /tmp/requirements.api.txt \
-    && pip install --no-cache-dir -r /tmp/requirements.api.txt \
-    && rm /tmp/requirements.api.txt
+# OpenMP runtime for scikit-learn wheels; ca-certs for pip HTTPS.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+COPY requirements-docker.txt .
+RUN python -m pip install --upgrade pip setuptools wheel \
+    && pip install -r requirements-docker.txt
 
 # train.py intentionally omitted from the image — build skips retraining so small hosts (e.g.
 # Render Free) avoid OOM during sklearn CV + GradientBoosting. Commit `athena.joblib` +

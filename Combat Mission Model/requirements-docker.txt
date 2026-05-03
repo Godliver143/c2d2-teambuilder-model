@@ -1,0 +1,11 @@
+# Used only by Dockerfile. Plain `uvicorn` avoids `uvicorn[standard]` extras (uvloop,
+# httptools, watchfiles) that may compile C code or spike memory on small cloud builders.
+# Pin the heavy stack for reliable manylinux wheels.
+fastapi>=0.111.0,<0.116
+uvicorn>=0.29.0,<1
+pydantic>=2.7.0,<3
+joblib>=1.4.0,<2
+numpy==1.26.4
+scipy==1.11.4
+scikit-learn==1.5.2
+pandas==2.2.3
