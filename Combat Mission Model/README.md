@@ -42,6 +42,16 @@ docker build -t combat-mission-model .
 docker run -p 8000:8000 combat-mission-model
 ```
 
+### Smoke-check the HTTP API locally
+
+Requires `pip install -r requirements.txt`. From **this directory** (`Combat Mission Model/`):
+
+```bash
+python3 -m unittest discover -v -s tests
+```
+
+Confirms lifespan load, `/health`, `/team/select`, rankings, soldier profiles, metadata, OpenAPI link, CORS behaviour, and a 400 path.
+
 The image listens on the `PORT` environment variable (defaults to `8000`) so it works on Render, Railway, Fly.io, Cloud Run, etc.
 
 ### Deploy for your team (recommended: Render)
