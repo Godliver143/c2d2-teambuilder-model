@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "trained_at": "2026-05-03T06:14:15.524726+00:00",
+  "model": {
+    "kind": "gradient_boosting_regressor",
+    "target": "event_score",
+    "score_clip_range": [
+      1.0,
+      5.0
+    ],
+    "feature_columns": [
+      "mission_type",
+      "avg_planning",
+      "std_planning",
+      "avg_attention_to_detail",
+      "std_attention_to_detail",
+      "avg_time_management",
+      "std_time_management",
+      "avg_decisiveness",
+      "std_decisiveness",
+      "avg_tactics",
+      "std_tactics",
+      "avg_ump_planning",
+      "avg_ump_attention_to_detail",
+      "avg_ump_time_management",
+      "avg_ump_decisiveness",
+      "avg_ump_tactics",
+      "overall_avg",
+      "overall_ump_avg",
+      "consistency",
+      "missions_completed",
+      "score_ambush",
+      "score_attack",
+      "score_break_contact",
+      "score_movement_to_contact",
+      "score_react_idf",
+      "score_react_uas",
+      "score_recon",
+      "avg_st_eo"
+    ],
+    "mission_type_classes": [
+      "ambush",
+      "attack",
+      "break_contact",
+      "movement_to_contact",
+      "react_idf",
+      "react_uas",
+      "recon"
+    ]
+  },
+  "metrics": {
+    "cv_mae_mean": 0.5538,
+    "cv_mae_std": 0.1142
+  },
+  "data": {
+    "evaluations_csv": "/Users/godliveralangyam/Downloads/Combat Mission Model/evaluations_full.csv",
+    "detailed_csv": "/Users/godliveralangyam/Downloads/Combat Mission Model/detailed_full.csv",
+    "evaluation_rows": 124,
+    "training_rows": 124,
+    "leader_profiles": 27,
+    "target_mean": 4.203225806451614,
+    "target_std": 0.6074716884244507
+  },
+  "consumer_note": "Downstream services (e.g. a future Athena coaching layer) should treat `raw_predicted_score` / rankings as model outputs; narrative guidance is out of scope here."
+}

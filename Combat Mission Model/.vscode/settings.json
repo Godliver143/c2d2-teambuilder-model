@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.terminal.activateEnvironment": true,
+  "jupyter.notebookFileRoot": "${workspaceFolder}",
+  "jupyter.interactiveWindow.creationMode": "perFile",
+  "notebook.lineNumbers": "on"
+}

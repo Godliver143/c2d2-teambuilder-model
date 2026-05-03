@@ -1,0 +1,10 @@
+# Relaxed lower bounds so installs succeed on current Python (e.g. 3.14).
+# For reproducible builds, pin in Docker or use a lock file + Python 3.11–3.12.
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+scikit-learn>=1.5.0
+pandas>=2.2.0
+numpy>=1.26.0
+joblib>=1.4.0
+pydantic>=2.7.0
+ipykernel>=6.29.0

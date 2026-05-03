@@ -1,0 +1,47 @@
+{
+  "feature_cols": [
+    "planning",
+    "attention_to_detail",
+    "time_management",
+    "decisiveness",
+    "tactics",
+    "ump_planning",
+    "ump_attention_to_detail",
+    "ump_time_management",
+    "ump_decisiveness",
+    "ump_tactics",
+    "mission_encoded"
+  ],
+  "score_cols": [
+    "planning",
+    "attention_to_detail",
+    "time_management",
+    "decisiveness",
+    "tactics",
+    "ump_planning",
+    "ump_attention_to_detail",
+    "ump_time_management",
+    "ump_decisiveness",
+    "ump_tactics"
+  ],
+  "mission_classes": [
+    "AREA RECON",
+    "BREAK CONTACT",
+    "LINEAR AMBUSH",
+    "MOVEMENT TO CONTACT",
+    "REACT TO IDF",
+    "REACT TO UAS",
+    "SQUAD AMBUSH",
+    "SQUAD ATTACK"
+  ],
+  "training_rows_real": 124,
+  "training_rows_augmented": 824,
+  "rf_mae_real": 0.056,
+  "gb_mae_real": 0.0112,
+  "score_range": [
+    1.0,
+    5.0
+  ],
+  "target_mean": 4.331,
+  "target_std": 0.598
+}

@@ -1,0 +1,4 @@
+[tool.pyright]
+# Pin analysis to the project venv so Pylance resolves numpy/sklearn/pandas consistently.
+venvPath = "."
+venv = ".venv"
