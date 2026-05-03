@@ -23,6 +23,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from mission_context import (
@@ -129,6 +130,28 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Optional CORS for teammates / web frontends — set CORS_ORIGINS to comma-separated origins
+# or "*" to allow any origin (no credentials with "*").
+_cors = os.getenv("CORS_ORIGINS", "*").strip()
+if _cors:
+    _origins = [o.strip() for o in _cors.split(",") if o.strip()]
+    if _origins == ["*"]:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=False,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    else:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
 
 # ── Root / discovery ──────────────────────────────────────────

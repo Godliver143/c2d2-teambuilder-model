@@ -1,0 +1,18 @@
+# Render Blueprint: Docker web service for the mission-performance API.
+# After pushing to GitHub: Render Dashboard → Blueprints → New → connect this repo,
+# then apply this file (or paste from repo). Free tier may spin down when idle.
+#
+# Docs: https://docs.render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: combat-mission-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: Combat Mission Model/Dockerfile
+    dockerContext: Combat Mission Model
+    healthCheckPath: /health
+    envVars:
+      - key: CORS_ORIGINS
+        value: "*"

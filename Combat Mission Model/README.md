@@ -42,6 +42,21 @@ docker build -t combat-mission-model .
 docker run -p 8000:8000 combat-mission-model
 ```
 
+The image listens on the `PORT` environment variable (defaults to `8000`) so it works on Render, Railway, Fly.io, Cloud Run, etc.
+
+### Deploy for your team (recommended: Render)
+
+1. Push this repository to GitHub (if it is not already).
+2. In [Render](https://render.com), create a **Blueprint** (or **Web Service** → **Docker**) and point it at the repo.
+3. If you use the included root `render.yaml`, Render will build from `Combat Mission Model/Dockerfile` with the correct context.
+4. After deploy, share the public URL Render assigns (for example `https://combat-mission-api.onrender.com`). Open `/docs` on that host for Swagger UI.
+
+**Teammates** can call the API at `GET /health`, `POST /team/select`, etc. **CORS** is configurable with `CORS_ORIGINS` (default `*` in the blueprint so browsers can call from another origin).
+
+**Security:** This reference API does not implement authentication. Treat the public URL as **open**. For restricted access, front it with SSO/VPN/API keys or deploy to a private network.
+
+Free tiers may **cold-start** after idle periods (first request can be slow).
+
 ---
 
 ## Roadmap (conceptual)
@@ -60,6 +75,8 @@ docker run -p 8000:8000 combat-mission-model
 | `DETAIL_PATH` | `./detailed_full.csv` | Detailed subtasks CSV |
 | `MODEL_PATH` | `./athena.joblib` | Serialized trained pipeline |
 | `MODEL_METADATA_PATH` | `./models/mission_model_metadata.json` | Training metadata JSON |
+| `PORT` | `8000` | HTTP port (hosts like Render/Railway set this automatically) |
+| `CORS_ORIGINS` | `*` | Comma-separated allowed browser origins; use `*` for any origin, or e.g. `https://yourapp.vercel.app` |
 
 ---
 
