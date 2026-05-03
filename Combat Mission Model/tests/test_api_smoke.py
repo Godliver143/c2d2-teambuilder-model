@@ -34,11 +34,21 @@ class TestSmokeAPI(unittest.TestCase):
     def tearDownClass(cls):
         cls.client_ctx.__exit__(None, None, None)
 
-    def test_root(self):
-        r = self.client.get("/")
+    def test_root_json(self):
+        r = self.client.get("/", headers={"Accept": "application/json"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json().get("service"), "combat-mission-model")
-        self.assertIn("/ui/", str(r.json().get("team_selection_ui", "")))
+        self.assertIn("/ui", str(r.json().get("team_selection_ui", "")))
+        paths = r.json().get("team_selection_ui_paths") or []
+        self.assertIn("/ui", paths)
+        self.assertIn("/viewer", paths)
+        self.assertEqual(r.json().get("browser_check"), "/browser-check")
+
+    def test_root_html_launcher(self):
+        r = self.client.get("/", headers={"Accept": "text/html"})
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("text/html", r.headers.get("content-type", ""))
+        self.assertIn("Team selection (main UI)", r.text)
 
     def test_web_ui_page(self):
         r = self.client.get("/ui/")
@@ -46,10 +56,17 @@ class TestSmokeAPI(unittest.TestCase):
         self.assertIn("text/html", r.headers.get("content-type", ""))
         self.assertIn("Team selection", r.text)
 
-    def test_ui_redirect_from_no_slash(self):
-        r = self.client.get("/ui", follow_redirects=False)
-        self.assertEqual(r.status_code, 307)
-        self.assertIn("/ui/", (r.headers.get("location") or ""))
+    def test_web_ui_alias_paths(self):
+        for path in ("/ui", "/ui/", "/viewer", "/team-selection", "/viewer/", "/team-selection/"):
+            with self.subTest(path=path):
+                r = self.client.get(path)
+                self.assertEqual(r.status_code, 200, msg=path)
+                self.assertIn("Team selection", r.text)
+
+    def test_browser_check_plain_http(self):
+        r = self.client.get("/browser-check")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("plain http", r.text.lower())
 
     def test_health_ok(self):
         r = self.client.get("/health")

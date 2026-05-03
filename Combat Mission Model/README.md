@@ -33,11 +33,27 @@ python train.py
 uvicorn main:app --reload --port 8000
 ```
 
-Open http://localhost:8000/docs
+Easier (always starts in the folder that owns `main.py`):
 
-Team selection appears in the browser at **http://localhost:8000/ui/** (or **http://127.0.0.1:8000/ui/**). Use **`http://`**, **not `https://`**: uvicorn locally serves plain HTTP only; **`https://` often triggers Chrome’s “invalid response”**.
+```bash
+./run_server.sh
+```
 
-Same backend as Swagger — submit the form to see roster options without using `/docs`.
+Open **http://127.0.0.1:8000/** — landing page lists **Team selection**, **Swagger**, **Health** (avoid typing `/ui` manually).
+
+Open http://127.0.0.1:8000/docs directly if you prefer Swagger first.
+
+Team selection UI (same app; use **`http://`**, not **`https://`**):
+
+- **http://127.0.0.1:8000/ui** (or `/ui/` with trailing slash)
+- **http://127.0.0.1:8000/viewer**
+- **http://127.0.0.1:8000/team-selection**
+
+If you see **`{"detail":"Not Found"}`**, wrong path or old server — use links from **http://127.0.0.1:8000/** **after `./run_server.sh`**.
+
+After updating code: **`git pull`**, rerun **`run_server.sh`**, ensure **`web/index.html`** lives next to **`main.py`**.
+
+Use **`http://127.0.0.1:8000/browser-check`** — plain text starting with **OK** confirms you are on **`http://`**.
 
 ### Docker (train baked in + serves reference API)
 

@@ -23,9 +23,9 @@ import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 
 from mission_context import (
     ALLOWED_DIFFICULTY,
@@ -47,6 +47,38 @@ from schemas import (
     TeamSelectRequest,
     TeamSelectResponse,
 )
+
+# Static team UI paths (above lifespan — startup log must see these)
+_WEB_DIR = Path(__file__).resolve().parent / "web"
+_UI_INDEX = _WEB_DIR / "index.html"
+
+_HOME_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Combat mission API</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, sans-serif; max-width: 36rem; margin: 2rem auto;
+      padding: 0 1rem; line-height: 1.5; background: #f8fafc; color: #0f172a; }
+    a { font-size: 1.05rem; display: block; margin: 0.65rem 0; color: #0369a1; }
+    a:hover { color: #0c4a6e; }
+    .warn { background: #fef3c7; padding: 1rem; border-radius: 10px; margin-bottom: 1.25rem; }
+    code { background: #e2e8f0; padding: 0.12rem 0.35rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Combat mission API — running</h1>
+  <div class="warn">
+    Bookmark this pattern: <code>http://127.0.0.1:8000/</code><br/>
+    Local servers use <strong>http</strong>, not <strong>https</strong> — <code>https://</code> often breaks with “invalid response”.
+  </div>
+  <p><a href="/ui"><strong>Team selection (main UI) →</strong></a></p>
+  <p><a href="/docs">Swagger / API explorer →</a></p>
+  <p><a href="/health">Health (JSON) →</a></p>
+  <p><a href="/browser-check">Plain-text connectivity check →</a></p>
+</body>
+</html>"""
 
 
 def _resolved_artifact_path() -> str:
@@ -178,6 +210,10 @@ async def lifespan(app: FastAPI):
         athena.save(artifact)
         athena.save_metadata()
         print(f"Model trained. CV MAE: {metrics['cv_mae_mean']:.4f}")
+    if _UI_INDEX.is_file():
+        print("Team selection UI: /ui  (also /viewer, /team-selection)")
+    else:
+        print("WARNING: web/index.html missing — team UI routes will 404.")
     yield
 
 
@@ -198,8 +234,11 @@ _configure_cors(app)
 
 # ── Root / discovery ──────────────────────────────────────────
 @app.get("/", tags=["System"])
-def root():
-    """Minimal index for probes and human discovery."""
+def root(request: Request):
+    """Serve HTML to real browsers; serve JSON when the client prefers machine output."""
+    accept = (request.headers.get("accept") or "").lower()
+    if "text/html" in accept:
+        return HTMLResponse(content=_HOME_HTML)
     return {
         "service": "combat-mission-model",
         "version": "1.0.0",
@@ -207,11 +246,24 @@ def root():
         "docs": "/docs",
         "openapi": "/openapi.json",
         "metadata": "/model/metadata",
-        "team_selection_ui": "/ui/",
+        "team_selection_ui": "/ui",
+        "team_selection_ui_paths": ["/ui", "/ui/", "/viewer", "/team-selection"],
+        "browser_check": "/browser-check",
         "integration_note": (
             "Mission scoring and team construction; pair with Athena for narrative / coaching."
         ),
     }
+
+
+# ── Plain-HTTP sanity check for browsers ("invalid response" is often HTTPS → HTTP port)
+@app.get("/browser-check", include_in_schema=False)
+def browser_check():
+    return PlainTextResponse(
+        "OK — plain HTTP reached the API.\n"
+        "Team UI paths (try any): /ui  /viewer  /team-selection\n"
+        "Tip: Use http://127.0.0.1:PORT in the address bar, not https://\n",
+        media_type="text/plain; charset=utf-8",
+    )
 
 
 # ── Health ────────────────────────────────────────────────────
@@ -387,26 +439,32 @@ def get_soldier(leader_identifier: str):
     return profile
 
 
-_WEB_DIR = Path(__file__).resolve().parent / "web"
-_UI_INDEX = _WEB_DIR / "index.html"
-
-
-@app.get("/ui", include_in_schema=False)
-def ui_strip_redirect():
-    """Redirect /ui → /ui/ so browser relative URLs behave consistently."""
-    return RedirectResponse(url="/ui/", status_code=307)
-
-
-@app.get("/ui/", include_in_schema=False)
-def team_selection_ui_page():
-    """Serve the team-selection viewer (same origin as API; use http:// not https:// locally)."""
+def _team_selection_ui_response(request: Request) -> HTMLResponse | Response:
     if not _UI_INDEX.is_file():
         raise HTTPException(
             status_code=404,
-            detail="Web UI missing: expected web/index.html next to main.py.",
+            detail="Team UI missing: add web/index.html next to main.py (clone from repo).",
         )
-    return FileResponse(
-        path=_UI_INDEX,
-        media_type="text/html; charset=utf-8",
-        headers={"Cache-Control": "no-cache"},
-    )
+    html = _UI_INDEX.read_text(encoding="utf-8")
+    if request.method == "HEAD":
+        body = html.encode("utf-8")
+        return Response(
+            status_code=200,
+            media_type="text/html; charset=utf-8",
+            headers={
+                "Cache-Control": "no-cache",
+                "Content-Length": str(len(body)),
+            },
+        )
+    return HTMLResponse(content=html, headers={"Cache-Control": "no-cache"})
+
+
+@app.api_route("/ui", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/ui/", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/viewer", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/viewer/", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/team-selection", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/team-selection/", methods=["GET", "HEAD"], include_in_schema=False)
+def team_selection_ui_page(request: Request):
+    """Browser team picker (same page on several paths to avoid 404 from typos)."""
+    return _team_selection_ui_response(request)
