@@ -141,6 +141,7 @@ Free tier **sleeps after idle**: first request after sleep can take **30–60+ s
 **If the build fails on Render**
 
 - Open **Logs** → **Build** (or **Deploy** if the build succeeded but the app exited). Note the **first** `ERROR` / `ModuleNotFoundError` / `Killed` line.
+  - **`rootDir` + folder names with spaces** — **`render.yaml` no longer uses `rootDir`**; it clones the repo and runs **`cd "Combat Mission Model" && …`**. Sync the blueprint (or paste those commands manually) before debugging further.
   - **`Killed` during `pip install`** — try the **native Python** blueprint in **`render.yaml`** (not Docker); ensure **`PYTHON_VERSION`** is **`3.11.11`**. Avoid **`uvicorn[standard]`** on cloud builds (pinned **`requirements-docker.txt`** uses plain **`uvicorn`**).
   - **Wrong Python version** — new Render stacks default to a very new Python; this repo pins **3.11.11** in **`render.yaml`** and **`.python-version`** under **`Combat Mission Model/`**.
   - **Docker-only failures** (`COPY`, image build): use Option A/B (native Python) above, or a paid **Docker** pipeline with more memory.
