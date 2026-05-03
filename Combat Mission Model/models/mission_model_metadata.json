@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "trained_at": "2026-05-03T06:14:15.524726+00:00",
+  "trained_at": "2026-05-03T15:14:03.800830+00:00",
   "model": {
     "kind": "gradient_boosting_regressor",
     "target": "event_score",
@@ -53,8 +53,8 @@
     "cv_mae_std": 0.1142
   },
   "data": {
-    "evaluations_csv": "/Users/godliveralangyam/Downloads/Combat Mission Model/evaluations_full.csv",
-    "detailed_csv": "/Users/godliveralangyam/Downloads/Combat Mission Model/detailed_full.csv",
+    "evaluations_csv": "/Users/godliveralangyam/Desktop/c2d2-teambuilder-model/Combat Mission Model/evaluations_full.csv",
+    "detailed_csv": "/Users/godliveralangyam/Desktop/c2d2-teambuilder-model/Combat Mission Model/detailed_full.csv",
     "evaluation_rows": 124,
     "training_rows": 124,
     "leader_profiles": 27,

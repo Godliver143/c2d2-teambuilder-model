@@ -176,6 +176,7 @@ Free tier **sleeps after idle**: first request after sleep can take **30–60+ s
   - **`Killed` during `pip install`** — try the **native Python** blueprint in **`render.yaml`** (not Docker); ensure **`PYTHON_VERSION`** is **`3.11.11`**. Avoid **`uvicorn[standard]`** on cloud builds (pinned **`requirements-docker.txt`** uses plain **`uvicorn`**).
   - **Wrong Python version** — new Render stacks default to a very new Python; this repo pins **3.11.11** in **`render.yaml`** and **`.python-version`** under **`Combat Mission Model/`**.
   - **Docker-only failures** (`COPY`, image build): use Option A/B (native Python) above, or a paid **Docker** pipeline with more memory.
+- **`ValueError: MT19937 is not a known BitGenerator`** (or similar) at startup — the **`athena.joblib`** was saved with a **different NumPy** than **`requirements-docker.txt`**. Fix: **`pip install -r requirements-docker.txt`** (same pins as Render), run **`python train.py`**, commit the new **`athena.joblib`** + **`models/mission_model_metadata.json`**, redeploy.
 - To refresh the model: **`python train.py`** locally → commit **`athena.joblib`** + **`models/mission_model_metadata.json`** → push → redeploy.
 
 ---

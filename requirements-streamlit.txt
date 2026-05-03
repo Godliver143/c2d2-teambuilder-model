@@ -1,5 +1,5 @@
 # Streamlit Community Cloud / local Streamlit — no FastAPI stack.
-# Pin scientific stack to match trained `athena.joblib` (same as requirements-docker.txt).
+# Pin scientific stack to match trained `athena.joblib` (same pins as Combat Mission Model/requirements-docker.txt).
 streamlit>=1.32.0,<2
 pydantic>=2.7.0,<3
 joblib>=1.4.0,<2

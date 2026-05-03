@@ -1,7 +1,9 @@
 # Production / locked deps for Docker and Render (`render.yaml` buildCommand).
 # Plain `uvicorn` avoids `uvicorn[standard]` extras (uvloop,
 # httptools, watchfiles) that may compile C code or spike memory on small cloud builders.
-# Pin the heavy stack for reliable manylinux wheels.
+# Pin the heavy stack for reliable manylinux wheels and for joblib compatibility:
+# retrain with `python train.py` using this same stack before committing `athena.joblib`
+# (mixed NumPy major versions break unpickling of sklearn RNG state on deploy).
 fastapi>=0.111.0,<0.116
 uvicorn>=0.29.0,<1
 pydantic>=2.7.0,<3
